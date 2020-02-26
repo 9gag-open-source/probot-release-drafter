@@ -1,7 +1,17 @@
-# Config for https://github.com/apps/release-drafter
-branches:
-  - master
+name-template: 'v$NEXT_PATCH_VERSION'
+tag-template: 'v$NEXT_PATCH_VERSION'
 template: |
-  ## What's Changed
+  # What's Changed
 
   $CHANGES
+categories:
+  - title: 'New'
+    label: 'type: feature'
+  - title: 'Bug Fixes'
+    label: 'type: bug'
+  - title: 'Maintenance'
+    label: 'type: maintenance'
+  - title: 'Documentation'
+    label: 'type: docs'
+  - title: 'Dependency Updates'
+    label: 'type: dependencies'

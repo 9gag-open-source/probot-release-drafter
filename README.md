@@ -6,29 +6,39 @@
 
 ---
 
-[![NPM package](https://img.shields.io/npm/v/release-drafter-github-app.svg)](https://www.npmjs.com/package/release-drafter-github-app)
-
 ## Usage
 
-You can use Release Drafter as a [GitHub Action](https://github.com/features/actions), by configuring your `.github/main.workflow` file with the following:
+You can use the [Release Drafter GitHub Action](https://github.com/marketplace/actions/release-drafter) in a [GitHub Actions Workflow](https://help.github.com/en/articles/about-github-actions) by configuring a YAML-based workflow file, e.g. `.github/workflows/release-drafter.yml`, with the following:
 
-```workflow
-workflow "Push" {
-  on = "push"
-  resolves = ["Draft Release"]
-}
+```yaml
+name: Release Drafter
 
-action "Draft Release" {
-  uses = "toolmantim/release-drafter@v5.1.1"
-  secrets = ["GITHUB_TOKEN"]
-}
+on:
+  push:
+    # branches to consider in the event; optional, defaults to all
+    branches:
+      - master
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    steps:
+      # Drafts your next Release notes as Pull Requests are merged into "master"
+      - uses: release-drafter/release-drafter@v5
+        with:
+          # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
+          # config-name: my-config.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-You can also install the [Release Drafter GitHub App](https://github.com/apps/release-drafter), choosing the repositories you want releases automatically created.
+If you're unable to use GitHub Actions, you can use the Release Drafter GitHub App. Please refer to the [Release Drafter GitHub App documentation](docs/github-app.md) for more information.
 
-Once you’ve added Release Drafter to your repository, it can be enabled by adding a `.github/release-drafter.yml` configuration file to each repository.
+## Configuration
 
-## Example
+Once you’ve added Release Drafter to your repository, it must be enabled by adding a `.github/release-drafter.yml` configuration file to each repository.
+
+### Example
 
 For example, take the following `.github/release-drafter.yml` file in a repository:
 
@@ -50,9 +60,14 @@ name-template: 'v$NEXT_PATCH_VERSION 🌈'
 tag-template: 'v$NEXT_PATCH_VERSION'
 categories:
   - title: '🚀 Features'
-    label: 'feature'
+    labels:
+      - 'feature'
+      - 'enhancement'
   - title: '🐛 Bug Fixes'
-    label: 'fix'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
   - title: '🧰 Maintenance'
     label: 'chore'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
@@ -76,9 +91,11 @@ You can configure Release Drafter using the following key in your `.github/relea
 | `no-changes-template` | Optional | The template to use for when there’s no changes. Default: `"* No changes"`.                                                                                                                                       |
 | `branches`            | Optional | The branches to listen for configuration updates to `.github/release-drafter.yml` and for merge commits. Useful if you want to test the app on a pull request branch. Default is the repository’s default branch. |
 | `categories`          | Optional | Categorize pull requests using labels. Refer to [Categorize Pull Requests](#categorize-pull-requests) to learn more about this option.                                                                            |
-| `exclude-lables`      | Optional | Exclude pull requests using labels. Refer to [Exclude Pull Requests](#exclude-pull-requests) to learn more about this option.                                                                                     |
+| `exclude-labels`      | Optional | Exclude pull requests using labels. Refer to [Exclude Pull Requests](#exclude-pull-requests) to learn more about this option.                                                                                     |
 | `replacers`           | Optional | Search and replace content in the generated changelog body. Refer to [Replacers](#replacers) to learn more about this option.                                                                                     |
-| `sort-direction`      | Optional | Sort changelog by merged date in ascending or descending order. Can be one of: `ascending`, `descending`. Default: `descending`.                                                                                  |
+| `sort-by`             | Optional | Sort changelog by merged_at or title. Can be one of: `merged_at`, `title`. Default: `merged_at`.                                                                                                                  |
+| `sort-direction`      | Optional | Sort changelog in ascending or descending order. Can be one of: `ascending`, `descending`. Default: `descending`.                                                                                                 |
+| `prerelease`          | Optional | Mark the draft release as pre-release. Default `false`.                                                                                                                                                           |
 
 Release Drafter also supports [Probot Config](https://github.com/probot/probot-config), if you want to store your configuration files in a central repository. This allows you to share configurations between projects, and create a organization-wide configuration file by creating a repository named `.github` with the file `.github/release-drafter.yml`.
 
@@ -131,7 +148,10 @@ categories:
   - title: '🚀 Features'
     label: 'feature'
   - title: '🐛 Bug Fixes'
-    label: 'fix'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
 ```
 
 Pull requests with the label "feature" or "fix" will now be grouped together:
@@ -169,9 +189,15 @@ If your project doesn't follow [Semantic Versioning](https://semver.org) you can
 
 For example, if your project doesn't use patch version numbers, you can set `version-template` to `$MAJOR.$MINOR`. If the current release is version 1.0, then `$NEXT_MINOR_VERSION` will be `1.1`.
 
-## GitHub Installation Permissions
+## Action Outputs
 
-Release Drafter requires full write, because GitHub does not offer a limited scope for only writing releases. **Don't install Release Drafter to your entire GitHub account — only add the repositories you want to draft releases on.**
+The Release Drafter GitHub Action sets a couple of outputs which can be used as inputs to other Actions in the workflow ([example](https://github.com/actions/upload-release-asset#example-workflow---upload-a-release-asset)).
+
+| Output       | Description                                                                                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`         | The ID of the release that was created or updated.                                                                                                                                                                            |
+| `html_url`   | The URL users can navigate to in order to view the release. i.e. `https://github.com/octocat/Hello-World/releases/v1.0.0`.                                                                                                    |
+| `upload_url` | The URL for uploading assets to the release, which could be used by GitHub Actions for additional uses, for example the [`@actions/upload-release-asset GitHub Action`](https://www.github.com/actions/upload-release-asset). |
 
 ## Developing
 
